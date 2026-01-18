@@ -4,8 +4,9 @@
 
 #include <stdio.h>
 #include <stdbool.h>
+#include <math.h>
 
-bool hit_sphere(const point3* center, double radius, const ray* r) {
+double hit_sphere(const point3* center, double radius, const ray* r) {
 
         vec3 ray_org = ray_origin(r);
         vec3 ray_dir = ray_direction(r);
@@ -17,15 +18,30 @@ bool hit_sphere(const point3* center, double radius, const ray* r) {
         double c = vec3_dot(&oc, &oc) - radius*radius;
 
         double discriminant = b*b - 4*a*c;
-        return (discriminant >= 0);
+        if(discriminant < 0) {
+            return -1.0;
+        }
+        else {
+            return ((-b - sqrt(discriminant)) / (2.0*a));
+        }
     }
 
 color ray_color(const ray* r) {
-    point3 center = (point3){.e = {0,0,-1}};
-    if(hit_sphere(&center, 0.5, r)) {
-        return (color){.e = {1,0,0}};
-    }
+     point3 center = (point3){.e = {0,0,-1}};
+    double t = hit_sphere(&center, 0.5, r);
     vec3 ray_dir = ray_direction(r);
+
+    if(t > 0.0) {
+        point3 p = ray_at(r, t);
+        vec3 p_sub_c = vec3_sub(&p, &center);
+        vec3 N = vec3_unit_vector(&p_sub_c);
+        
+        double Nx = getX(&N);
+        double Ny = getY(&N);
+        double Nz = getZ(&N);
+
+        return (color){.e = {0.5*(Nx+1), 0.5*(Ny+1), 0.5*(Nz+1)}};
+    }
 
     vec3 unit_direction = vec3_unit_vector(&ray_dir);
     double a = 0.5*(getY(&unit_direction) + 1.0);
