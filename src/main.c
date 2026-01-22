@@ -1,6 +1,6 @@
-#include "color.h"
-#include "ray.h"
-#include "vec3.h"
+#include "../include/color.h"
+#include "../include/ray.h"
+#include "../include/vec3.h"
 
 #include <stdio.h>
 #include <stdbool.h>
@@ -12,17 +12,19 @@ double hit_sphere(const point3* center, double radius, const ray* r) {
         vec3 ray_dir = ray_direction(r);
 
         vec3 oc = vec3_sub(center, &ray_org);
+        double dir_length_squared = vec3_length_squared(&ray_dir);
+        double oc_length_squared = vec3_length_squared(&oc);
 
-        double a = vec3_dot(&ray_dir, &ray_dir);
-        double b = -2.0 * vec3_dot(&ray_dir, &oc);
-        double c = vec3_dot(&oc, &oc) - radius*radius;
+        double a = dir_length_squared;
+        double h = vec3_dot(&ray_dir, &oc);
+        double c =  oc_length_squared - radius*radius;
 
-        double discriminant = b*b - 4*a*c;
+        double discriminant = h*h - a*c;
         if(discriminant < 0) {
             return -1.0;
         }
         else {
-            return ((-b - sqrt(discriminant)) / (2.0*a));
+            return ((h - sqrt(discriminant)) / a);
         }
     }
 
