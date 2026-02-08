@@ -1,5 +1,5 @@
-#ifndef SPEHERE_H
-#define SPEHERE_H
+#ifndef SPHERE_H
+#define SPHERE_H
 
 #include "hittable.h"
 #include "vec3.h"
@@ -12,13 +12,13 @@ typedef struct {
 } sphere;
 
 
-bool sphere_hit(const hittable* self, const ray* r, double tmin, double tmax, hit_recod* rec) {
+bool sphere_hit(const hittable* self, const ray* r, double tmin, double tmax, hit_record* rec) {
     const sphere* s = (const sphere*) self;
 
-    vec3 oc = vec3_sub(s->center, r->origin);
-    double a = vec3_length_squared(r->direction);
-    double h = vec3_dot(r->direction, oc);
-    double c = vec3_length_squared(oc) - s->radius * s->radius;
+    vec3 oc = vec3_sub(&s->center, &r->orig);
+    double a = vec3_length_squared(&r->dir);
+    double h = vec3_dot(&r->dir, &oc);
+    double c = vec3_length_squared(&oc) - s->radius * s->radius;
 
     double discriminant = h*h - a*c;
     if(discriminant < 0) return false;
@@ -35,8 +35,13 @@ bool sphere_hit(const hittable* self, const ray* r, double tmin, double tmax, hi
 
         rec->t = root;
         rec->p = ray_at(r, root);
-        vec3 pSubC = vec3_sub(rec->p, s->center);
-        rec->normal = vec3_divide_inplace(&pSubC, s->radius);
+        // vec3 pSubC = vec3_sub(rec->p, s->center);
+        // rec->normal = vec3_divide_inplace(&pSubC, s->radius);
+        vec3 pToC = vec3_sub(&rec->p, &s->center);
+
+        vec3 outward_normal = vec3_divide_inplace(&pToC, s->radius);
+
+        set_face_normal(rec, r, &outward_normal);
 
         return true;
 
@@ -50,3 +55,5 @@ sphere make_sphere(point3 center, double radius) {
 
     return s;
 }
+
+#endif
