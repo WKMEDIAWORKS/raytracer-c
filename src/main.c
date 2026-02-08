@@ -1,49 +1,40 @@
-#include "../include/color.h"
-#include "../include/ray.h"
-#include "../include/vec3.h"
+#include "../include/rtweekend.h"
+#include "../include/hittable.h"
+#include "../include/hittable_list.h"
+#include "../include/sphere.h"
 
-#include <stdio.h>
 #include <stdbool.h>
-#include <math.h>
 
-double hit_sphere(const point3* center, double radius, const ray* r) {
+// double hit_sphere(const point3* center, double radius, const ray* r) {
 
-        vec3 ray_org = ray_origin(r);
-        vec3 ray_dir = ray_direction(r);
+//         vec3 ray_org = ray_origin(r);
+//         vec3 ray_dir = ray_direction(r);
 
-        vec3 oc = vec3_sub(center, &ray_org);
-        double dir_length_squared = vec3_length_squared(&ray_dir);
-        double oc_length_squared = vec3_length_squared(&oc);
+//         vec3 oc = vec3_sub(center, &ray_org);
+//         double dir_length_squared = vec3_length_squared(&ray_dir);
+//         double oc_length_squared = vec3_length_squared(&oc);
 
-        double a = dir_length_squared;
-        double h = vec3_dot(&ray_dir, &oc);
-        double c =  oc_length_squared - radius*radius;
+//         double a = dir_length_squared;
+//         double h = vec3_dot(&ray_dir, &oc);
+//         double c =  oc_length_squared - radius*radius;
 
-        double discriminant = h*h - a*c;
-        if(discriminant < 0) {
-            return -1.0;
-        }
-        else {
-            return ((h - sqrt(discriminant)) / a);
-        }
-    }
+//         double discriminant = h*h - a*c;
+//         if(discriminant < 0) {
+//             return -1.0;
+//         }
+//         else {
+//             return ((h - sqrt(discriminant)) / a);
+//         }
+//     }
 
-color ray_color(const ray* r) {
-     point3 center = (point3){.e = {0,0,-1}};
-    double t = hit_sphere(&center, 0.5, r);
-    vec3 ray_dir = ray_direction(r);
-
-    if(t > 0.0) {
-        point3 p = ray_at(r, t);
-        vec3 p_sub_c = vec3_sub(&p, &center);
-        vec3 N = vec3_unit_vector(&p_sub_c);
-        
-        double Nx = getX(&N);
-        double Ny = getY(&N);
-        double Nz = getZ(&N);
-
-        return (color){.e = {0.5*(Nx+1), 0.5*(Ny+1), 0.5*(Nz+1)}};
-    }
+color ray_color(const ray* r, const hittable* world) {
+     hit_record rec;
+     if(world->hit(world, r, 0, infinity, &rec)) {
+        color c = (color){.e = {1,1,1}};
+        vec3 nAddC = vec3_add(&rec.normal, &c);
+        return vec3_scale(0.5, &nAddC);
+     }
+     vec3 ray_dir = r->dir;
 
     vec3 unit_direction = vec3_unit_vector(&ray_dir);
     double a = 0.5*(getY(&unit_direction) + 1.0);
@@ -63,6 +54,23 @@ int main(void) {
         image_height = 1;
     }
     double double_img_hgt = (double)image_height;
+
+    //world
+
+    hittable_list world;
+    hittable_list_init(&world);
+    //usage hittable* obj = (hittable*)&s;
+    sphere s1 = make_sphere((point3){.e = {0,0,-1}}, 0.5);
+    sphere s2 = make_sphere((point3){.e = {0,-100.5,-1}}, 100);
+
+    hittable* obj1 = (hittable*)&s1;
+    hittable* obj2 = (hittable*)&s2;
+    hittable* obj3 = (hittable*)&world;
+
+
+
+    hittable_list_add(&world, obj1);
+    hittable_list_add(&world, obj2);
 
     //camera
     double focal_length = 1.0;
@@ -126,7 +134,7 @@ int main(void) {
             vec3 ray_direction = vec3_sub(&pixel_center, &camera_center);
             ray r = ray_create(camera_center, ray_direction);
 
-            color pixel_color = ray_color(&r);
+            color pixel_color = ray_color(&r, obj3);
             write_color(stdout, &pixel_color);
         }
     }
